@@ -9,12 +9,12 @@ async function sleep() {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve();
-        }, 2000)
+        }, 500)
     });
 }
 
 async function main() {
-    const db = await sqlite.open('./data/three_or_more_feedback_emails.db');
+    const db = await sqlite.open('./data/november_december_january_feedbacks.db');
 
     //create table if we need to
 
@@ -24,7 +24,7 @@ async function main() {
         console.log('error', e);
     }
 
-    const fileContent = fs.readFileSync('./data/three_or_more_click_emails.csv');
+    const fileContent = fs.readFileSync('./data/november_december_january_feedbacks.csv');
 
     const records = parse(fileContent);
     records.shift(); /* get rid of the headers */
@@ -33,11 +33,11 @@ async function main() {
     let numRequests = 0;
 
     for await (const record of records) {
-        [ip, num_clicks] = record;
+        [ip, num_feedbacks] = record;
 
         numRequests++;
 
-        let minutesLeft = Math.round((numRecords - numRequests) * 2 / 60);
+        let minutesLeft = Math.round((numRecords - numRequests) * .5 / 60);
         let hoursLeft = 0;
 
         if (minutesLeft >= 60) {
@@ -48,6 +48,7 @@ async function main() {
 
         if (hoursLeft > 0) {
             console.log(`${hoursLeft} hours left`)
+            console.log(`${minutesLeft%60} minutes left`)
         } else {
             console.log(`${minutesLeft} minutes left`)
         }
@@ -226,14 +227,14 @@ async function main() {
             }
 
             console.log(organization);
-            console.log('num_clicks',num_clicks);
+            console.log('num_feedbacks',num_feedbacks);
 
             // insert into the sqlite db, lookup owner and then update or insert
 
             if (request_ip) {
                 await db.run("UPDATE request_ips SET owner = ? where ip = ?", organization, ip);
             } else {
-                await db.run("INSERT INTO request_ips ('ip','owner','num_events') VALUES (?,?,?)", ip, organization, num_clicks);
+                await db.run("INSERT INTO request_ips ('ip','owner','num_events') VALUES (?,?,?)", ip, organization, num_feedbacks);
             }
 
             await sleep();
